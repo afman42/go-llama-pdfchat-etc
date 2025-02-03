@@ -17,6 +17,7 @@
     "jquery": "^1.9.1",
     "postcss": "^8.5.1",
     "select2": "3.5",
-    "tailwindcss": "^4.0.3"
+    "tailwindcss": "^4.0.3",
+    "toastr": "^2.1.4"
   }
 }
