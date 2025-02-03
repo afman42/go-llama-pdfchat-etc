@@ -7,9 +7,11 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/afman42/go-llama-pdfchat-etc/utils"
@@ -51,22 +53,44 @@ func main() {
 	}
 	IpCors = os.Getenv("CORS_DOMAIN")
 	Port := os.Getenv("APP_PORT")
+	if _, err := os.Stat("./tmp"); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.Mkdir("tmp", os.ModePerm); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	files, err := filepath.Glob(utils.PathFileTemp("*"))
+	if err != nil {
+		panic(err)
+	}
+	for _, f := range files {
+		if err := os.Remove(f); err != nil {
+			panic(err)
+		}
+	}
+	dist, err := fs.Sub(WebContent, "web/dist")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 	mux := http.NewServeMux()
 	handler := utils.WrapHandlerWithLogging(http.HandlerFunc(index))
 	mux.Handle("/", handler)
 	if Mode == ModePreview || Mode == ModeProd {
-		// mux.Handle("/assets/", http.FileServer(http.FS(dist)))
+		mux.Handle("/assets/", http.FileServer(http.FS(dist)))
 		// Static Folder web/public
-		// mux.Handle("/vite.svg", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// data, err := WebContent.ReadFile("web/dist/vite.svg")
-		// if err != nil {
-		// 	http.Error(w, "File not found", http.StatusNotFound)
-		// 	return
-		// }
-		// w.Header().Set("Content-Type", "image/svg+xml")
-		// w.WriteHeader(http.StatusOK)
-		// w.Write(data)
-		// }))
+		mux.Handle("/vite.svg", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		data, err := WebContent.ReadFile("web/dist/vite.svg")
+		if err != nil {
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+		}))
 	}
 	fmt.Println("Server starting in localhost:" + Port)
 	err = http.ListenAndServe(":"+Port, mux)
@@ -112,6 +136,8 @@ func index(w http.ResponseWriter, r *http.Request) {
 				utils.JsonResponse(w, http.StatusOK, string(a))
 				return
 			}
+			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, query listModel not found")
+			return
 		}
 		err := r.ParseMultipartForm(1024)
 		if err != nil {
@@ -132,12 +158,6 @@ func index(w http.ResponseWriter, r *http.Request) {
 			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input question")
 			return
 		}
-		htUrl := strings.TrimSpace(r.FormValue("htUrl"))
-		fmt.Println(htUrl)
-		if htUrl == "" {
-			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input remote url or localhost")
-			return
-		}
 		modelEmbed := strings.TrimSpace(r.FormValue("modelEmbed"))
 		if modelEmbed == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input model Embedding")
@@ -151,23 +171,25 @@ func index(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Embedding model:", modelEmbed)
 		fmt.Println("Chat model:", modelChat)
 		configEmbedding := gollama.Gollama{
-			ServerAddr: htUrl,
+			ServerAddr: os.Getenv("OLLAMA_HOST"),
 			ModelName:  modelEmbed,
 			Verbose:    true,
 		}
 		configChat := gollama.Gollama{
-			ServerAddr: htUrl,
+			ServerAddr: os.Getenv("OLLAMA_HOST"),
 			ModelName:  modelChat,
 			Verbose:    true,
 		}
 		e := gollama.NewWithConfig(configEmbedding)
-		if err = e.PullIfMissing(ctx); err != nil {
+		_, err = e.HasModel(ctx, modelEmbed)
+		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		c := gollama.NewWithConfig(configChat)
-		if err = c.PullIfMissing(ctx); err != nil {
+		_, err = c.HasModel(ctx, modelChat)
+		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
