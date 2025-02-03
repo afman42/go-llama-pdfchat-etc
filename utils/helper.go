@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -84,4 +85,13 @@ func JsonResponse(w http.ResponseWriter, statusCode int, message string) {
 		StatusCode: statusCode,
 		Message:    message,
 	})
+}
+
+func PathFileTemp(filename string) string {
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	dir = dir + "/tmp/"
+	return filepath.Join(dir + filename)
 }
