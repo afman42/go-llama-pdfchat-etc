@@ -46,7 +46,7 @@ build/compress_linux:
 build: build/web build/rmfldr build/linux build/compress_linux; 
 
 deploy:
-	caprover deploy -h $$CAPROVER_HOST -p $$CAPROVER_PASSWORD -t deploy.tar -a $$CAPROVER_APP_NAME -n $$CAPROVER_MACHINE_NAME;
+	caprover deploy -h $$CAPROVER_HOST -p $$CAPROVER_PASSWORD -t deploy.tar -a $$CAPROVER_APP_NAME_GO_LLAMA -n $$CAPROVER_MACHINE_NAME;
 
 deploy/tar:
 	rm -f deploy.tar;
