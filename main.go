@@ -149,10 +149,6 @@ func index(w http.ResponseWriter, r *http.Request) {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		if err := r.ParseForm(); err != nil {
-			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, upload file")
-			return
-		}
 		txt := strings.TrimSpace(r.FormValue("txt"))
 		if txt == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input question")
