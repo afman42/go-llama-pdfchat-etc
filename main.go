@@ -82,14 +82,14 @@ func main() {
 		mux.Handle("/assets/", http.FileServer(http.FS(dist)))
 		// Static Folder web/public
 		mux.Handle("/vite.svg", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data, err := WebContent.ReadFile("web/dist/vite.svg")
-		if err != nil {
-			http.Error(w, "File not found", http.StatusNotFound)
-			return
-		}
-		w.Header().Set("Content-Type", "image/svg+xml")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+			data, err := WebContent.ReadFile("web/dist/vite.svg")
+			if err != nil {
+				http.Error(w, "File not found", http.StatusNotFound)
+				return
+			}
+			w.Header().Set("Content-Type", "image/svg+xml")
+			w.WriteHeader(http.StatusOK)
+			w.Write(data)
 		}))
 	}
 	fmt.Println("Server starting in localhost:" + Port)
@@ -122,6 +122,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case http.MethodPost:
+		const MB = 1 << 20
 		ctx := context.Background()
 		if listModel := r.URL.Query().Has("listModel"); listModel {
 			q := r.URL.Query().Get("listModel")
@@ -139,11 +140,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, query listModel not found")
 			return
 		}
-		err := r.ParseMultipartForm(1024)
+		err := r.ParseMultipartForm(1 * MB)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, upload file")
 			return
 		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, 1*MB)
+
 		fileLocation, err := utils.UploadFile(w, r, "file")
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
