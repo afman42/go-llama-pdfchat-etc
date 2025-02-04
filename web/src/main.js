@@ -24,7 +24,7 @@ $("#app").html(
       <form class="flex flex-col w-full" id="formUpload">
         <textarea value="Gollama" disabled id="txt" class="focus:border-blue-500 mb-2 flex w-full border-solid border-2 border-black rounded-lg p-2" name="txt" placeholder="Gollama"></textarea>
         <div class="grid grid-cols-2 gap-2 flex-row w-full">
-          <input type="file" id="file" name="file" class="w-full p-2  bg-blue-100 rounded-lg hover:border-solid hover:border-2 hover:border-blue-100 hover:bg-white hover:text-black cursor-not-allowed">
+          <input accept=".pdf,.txt" type="file" id="file" name="file" class="w-full p-2  bg-blue-100 rounded-lg hover:border-solid hover:border-2 hover:border-blue-100 hover:bg-white hover:text-black cursor-not-allowed">
           <button class='flex bg-green-500 text-white w-full p-2 rounded-lg hover:border-solid hover:border-2 hover:border-green-100 hover:bg-white hover:text-black' id='rmvfl' type='button'>Remove file</button>
           <button type="submit" disabled id="send" class="flex w-full p-2 bg-red-500 cursor-not-allowed rounded-lg hover:bg-white hover:border-solid hover:border-red-500 hover:border-2 hover:text-black text-white justify-center">send</button>
         </div>
@@ -35,10 +35,12 @@ $("#app").html(
           <button type="button" id="btnHtUrl" class="flex w-full py-2 bg-amber-500 cursor-pointer rounded-lg hover:bg-white hover:border-solid hover:border-amber-500 hover:border-2 hover:text-black text-white justify-center items-center">Fetch</button>
       </label>
       <div class="grid grid-cols-2 gap-2 flex-row w-full">
-        <label for="embedding" class="flex flex-col">Model Embbeding <a href="https://ollama.com/search?c=embedding" target="_blank" class="text-blue-500">Link models</a>
+        <label for="embedding" class="flex flex-col">
+          <h6 class="flex flex-row my-2">Model Embbeding <a href="https://ollama.com/search?c=embedding" target="_blank" class="text-blue-500 ml-2">Link models Embed</a></h6>
           <input type="hidden" class="basic-single-embed"/>
         </label>
-        <label for="chat" class="flex flex-col">Model Chat <a href="https://ollama.com/search" target="_blank" class="text-blue-500">Link Chat</a>
+        <label for="chat" class="flex flex-col">
+          <span class="flex flex-row my-2">Model Chat <a href="https://ollama.com/search" target="_blank" class="ml-2 flex text-blue-500">Link models Chat</a></span>
           <input type="hidden" class="basic-single-chat"/>
         </label>
       </div>
@@ -53,12 +55,29 @@ const formData = new FormData();
 const API_URL = import.meta.env.VITE_API_URL;
 let data = {};
 data.txt = $("#txt").val();
+data.modelChat = "";
+data.modelEmbed = "";
 $("#txt").addClass("cursor-not-allowed");
 $("#file").attr("disabled", true);
 $("#rmvfl").hide();
 $("#file").on("change", function (e) {
   let fileList = e.target.files;
+  if (data.modelChat == "" || data.modelChat == "") {
+    toastr.warning("please fill model embed or chat");
+    $(this).val("");
+    return;
+  }
   if (!fileList.length) return;
+  if (!["application/pdf", "text/plain"].includes(fileList[0].type)) {
+    toastr.warning("upload file must extenstion .pdf and .txt");
+    $(this).val("");
+    return;
+  }
+  if (fileList[0].size > 1024) {
+    toastr.warning("upload file must 1024kb");
+    $(this).val("");
+    return;
+  }
   formData.append("file", fileList[0], fileList[0].name);
   $("#send").attr("disabled", false);
   $("#send").addClass("cursor-pointer");
@@ -72,7 +91,7 @@ $("#file").on("change", function (e) {
   $("#file").attr("disabled", true);
 });
 
-$("#rmvfl").on("click", function (e) {
+$("body").on("click", "#rmvfl", function (e) {
   e.preventDefault();
   formData.delete("file");
   $("#file").val("");
@@ -80,9 +99,13 @@ $("#rmvfl").on("click", function (e) {
   $("#file").removeClass("cursor-not-allowed");
   $("#file").addClass("cursor-pointer");
   toastr.success("successfully remove file");
-  $("#rmvfl").hide();
   $("#file").parent().removeClass("grid-cols-3");
   $("#file").parent().addClass("grid-cols-2");
+  $("#txt").attr("disabled", true);
+  $("#send").attr("disabled", true);
+  $("#send").addClass("cursor-not-allowed");
+  $("#txt").addClass("cursor-not-allowed");
+  $("#rmvfl").hide();
 });
 
 let dataModelsArray = [];
@@ -154,6 +177,7 @@ $(".basic-single-embed").on("change", function (e) {
   if (formData.has("modelEmbed")) {
     formData.delete("modelEmbed");
   }
+  data.modelEmbed = value;
   formData.append("modelEmbed", value);
 });
 $(".basic-single-chat").on("change", function (e) {
@@ -161,6 +185,7 @@ $(".basic-single-chat").on("change", function (e) {
   if (formData.has("modelChat")) {
     formData.delete("modelChat");
   }
+  data.modelChat = value;
   formData.append("modelChat", value);
 });
 
@@ -173,6 +198,11 @@ $("#formUpload").on("submit", function (e) {
   e.preventDefault();
   if (data.txt == "") {
     toastr.warning("please fill the input");
+    return;
+  }
+
+  if (data.modelEmbed == "" || data.modelChat == "") {
+    toastr.warning("please fill model embed or chat");
     return;
   }
 
@@ -222,6 +252,8 @@ $("#formUpload").on("submit", function (e) {
       $("body").removeAttr("style");
       $("main").removeAttr("style");
       $("body *").removeAttr("disabled");
+      $("#rmvfl").attr("disabled", false);
+      console.log($("#rmvfl"));
       if (formData.has("txt")) {
         formData.delete("txt");
       }
