@@ -239,7 +239,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 		if len(contexts) == 0 {
 			fmt.Println("> No context found")
-			utils.JsonResponse(w, http.StatusOK, "> No context found, so get another question")
+			utils.JsonResponse(w, http.StatusOK, "No context found, so get another question")
 			return
 		}
 		// Create the prompt
