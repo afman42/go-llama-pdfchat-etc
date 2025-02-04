@@ -17,6 +17,6 @@
 ## Todo
 
 - [x] Add remove upload file
-- [] Make Responsive web in mobile and pc
+- [x] Make Responsive web in mobile and pc
 - [] Need Ui Box chat improved
 - [] Add log from backend
