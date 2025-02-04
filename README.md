@@ -5,6 +5,8 @@
 - Install Golang Terbaru
 - Install NodeJS Terbaru
 - Install Ollama Models Terbaru
+- Install Cmake Terbaru
+- UPX (compress file)
 - Model Embedding
   - How to chat pdf, use model `mistral`
   - How to chat txt, use model `nomic-embed-text`
@@ -20,3 +22,10 @@
 - [x] Make Responsive web in mobile and pc
 - [] Need Ui Box chat improved
 - [] Add log from backend
+
+## Menjalankan
+
+- sebelum jalankan, `go mod tidy` perlu internet
+- di dev, `make run/api`, `make run/web` di beda terminal
+- di preview, `make run/preview_linux`
+- di prod, `make deploy/prod` mau masukin ke `caprover`
