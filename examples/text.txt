@@ -1,0 +1,8 @@
+GOLLAMA is a package for using Ollama models in Go.
+GOLLAMA can use vision models, tools, and structured formats.
+
+Vision models are used to add vision functionality to the model, is useful for tasks like image captioning. An example of a vision model is llama3.2-vision.
+
+Tools are used to add functionality to the model, with this you can create agents that can interact with the model. An example of a tool is llama3.2, llama3.3.
+
+Structured formats are used to format the output of the model, is useful to control the response of the model. Can be used in any model.
