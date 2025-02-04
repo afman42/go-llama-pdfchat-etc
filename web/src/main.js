@@ -17,7 +17,7 @@ toastr.options.timeOut = 1000; // How long the toast will display without user i
 toastr.options.extendedTimeOut = 1000; // How long the toast will display after a user hovers over it
 toastr.options.progressBar = true;
 $("#app").html(
-  `<main class="flex mx-auto flex-col m-2 w-1/2">
+  `<main class="flex mx-auto flex-col m-2 w-1/2 min-sm:w-5/6 sm:w-5/6 md:5/6">
     <div class="flex border-2 gap-2 p-2 pb-2 flex-col border-black border-solid w-full overflow-x-hidden overflow-y-auto h-60 mb-2" id="txtContainer">
     </div>
     <div class="flex flex-col items-center justify-center w-full">
@@ -132,12 +132,18 @@ function ajaxFetchSelect2() {
       $(".basic-single-chat").attr("disabled", true);
       $("#btnHtUrl").attr("disabled", true);
       toastr.info("info fetch models");
+      $("#btnHtUrl").addClass("cursor-not-allowed");
+      $("#btnHtUrl").removeClass("cursor-pointer");
     },
     complete: function (jqXHR, txtStatus) {
       $("#btnHtUrl").attr("disabled", false);
+      $("#btnHtUrl").removeClass("cursor-not-allowed");
+      $("#btnHtUrl").addClass("cursor-pointer");
     },
     success: function (data, textStatus, jqXHR) {
       $("#btnHtUrl").attr("disabled", false);
+      $("#btnHtUrl").removeClass("cursor-not-allowed");
+      $("#btnHtUrl").addClass("cursor-pointer");
       const jsonParseMessage = JSON.parse(data.message.trim());
       if (Array.isArray(jsonParseMessage)) {
         toastr.success("successfully response fetch");
@@ -154,7 +160,7 @@ function ajaxFetchSelect2() {
     },
   });
 }
-$("#btnHtUrl").on("click", function (e) {
+$("body").on("click", "#btnHtUrl", function (e) {
   e.preventDefault();
   ajaxFetchSelect2();
 
@@ -232,10 +238,6 @@ $("#formUpload").on("submit", function (e) {
       $("body").css("opacity", 0.5);
       $("body").css("cursor", "not-allowed");
       $("body").css("cursor", "not-allowed");
-      $("body").css("position", "relative");
-      $("main").css("position", "absolute");
-      $("main").css("left", "30%");
-      $("body").css("z-index", 999);
       $("#file").attr("disabled", true);
       $("#rmvfl").attr("disabled", true);
       $("body").css(
@@ -252,6 +254,7 @@ $("#formUpload").on("submit", function (e) {
       $("main").removeAttr("style");
       $("body *").removeAttr("disabled");
       $("#rmvfl").attr("disabled", false);
+      $("#btnHtUrl").attr("disabled", false);
       if (formData.has("txt")) {
         formData.delete("txt");
       }
@@ -283,6 +286,7 @@ $("#formUpload").on("submit", function (e) {
         $("#rmvfl").attr("disabled", false);
         $("main").removeAttr("style");
         $("body").removeAttr("style");
+        $("#btnHtUrl").attr("disabled", false);
         const jsonParseMessage = JSON.parse(jqXhr.responseText.trim());
         if (jsonParseMessage.statusCode == 400)
           toastr.error(jsonParseMessage.message);
