@@ -73,7 +73,7 @@ $("#file").on("change", function (e) {
     $(this).val("");
     return;
   }
-  if (fileList[0].size > 1024) {
+  if (fileList[0].size / 1024 / 1024 > 1) {
     toastr.warning("upload file must 1024kb");
     $(this).val("");
     return;
@@ -139,7 +139,6 @@ function ajaxFetchSelect2() {
     success: function (data, textStatus, jqXHR) {
       $("#btnHtUrl").attr("disabled", false);
       const jsonParseMessage = JSON.parse(data.message.trim());
-      console.log(jsonParseMessage);
       if (Array.isArray(jsonParseMessage)) {
         toastr.success("successfully response fetch");
         $(".basic-single-embed").attr("disabled", false);
