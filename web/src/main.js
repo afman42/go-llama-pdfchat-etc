@@ -253,7 +253,6 @@ $("#formUpload").on("submit", function (e) {
       $("main").removeAttr("style");
       $("body *").removeAttr("disabled");
       $("#rmvfl").attr("disabled", false);
-      console.log($("#rmvfl"));
       if (formData.has("txt")) {
         formData.delete("txt");
       }
