@@ -31,21 +31,21 @@ $("#app").html(
       </form>
     </div>
     <div class="flex flex-col my-2">
-      <label for="remote-url" class="block">Fetch Models
-          <button type="button" id="btnHtUrl" class="flex w-full py-2 bg-amber-500 cursor-pointer rounded-lg hover:bg-white hover:border-solid hover:border-amber-500 hover:border-2 hover:text-black text-white justify-center items-center">Fetch</button>
+      <label for="remote-url" class="block min-sm:text-sm">Fetch Models
+          <button type="button" id="btnHtUrl" class="flex w-full py-2 bg-amber-500 cursor-pointer rounded-lg hover:bg-white hover:border-solid hover:border-amber-500 hover:border-2 hover:text-black text-white justify-center items-center min-sm:text-sm">Fetch</button>
       </label>
       <div class="grid grid-cols-2 gap-2 flex-row w-full">
         <label for="embedding" class="flex flex-col">
-          <h6 class="flex flex-row my-2">Model Embbeding <a href="https://ollama.com/search?c=embedding" target="_blank" class="text-blue-500 ml-2">Link models Embed</a></h6>
-          <input type="hidden" class="basic-single-embed"/>
+          <h6 class="flex flex-row my-2 min-sm:block min-sm:text-xs"><a href="https://ollama.com/search?c=embedding" target="_blank" class="text-blue-500 ml-2">Link models Embed</a></h6>
+          <input type="hidden" class="basic-single-embed flex"/>
         </label>
         <label for="chat" class="flex flex-col">
-          <span class="flex flex-row my-2">Model Chat <a href="https://ollama.com/search" target="_blank" class="ml-2 flex text-blue-500">Link models Chat</a></span>
-          <input type="hidden" class="basic-single-chat"/>
+          <span class="flex flex-row my-2 min-sm:block min-sm:text-xs"><a href="https://ollama.com/search" target="_blank" class="ml-2 flex text-blue-500">Link models Chat</a></span>
+          <input type="hidden" class="basic-single-chat flex"/>
         </label>
       </div>
     </div>
-    <span>Log:</span>
+    <span class="min-sm:text-sm">Log:</span>
     <div class="flex border-2 border-black border-solid w-full h-48 overflow-x-scroll " id="logStdout">
     </div>
   </main>`,
@@ -57,6 +57,7 @@ let data = {};
 data.txt = $("#txt").val();
 data.modelChat = "";
 data.modelEmbed = "";
+data.ModelsArray = [];
 $("#txt").addClass("cursor-not-allowed");
 $("#file").attr("disabled", true);
 $("#rmvfl").hide();
@@ -108,15 +109,14 @@ $("body").on("click", "#rmvfl", function (e) {
   $("#rmvfl").hide();
 });
 
-let dataModelsArray = [];
 $(".basic-single-embed").select2({
   placeholder: "Search for a Models Embed",
-  data: [],
+  data: data.ModelsArray,
 });
 
 $(".basic-single-chat").select2({
   placeholder: "Search for a Models Chat",
-  data: [],
+  data: data.ModelsArray,
 });
 
 $(".basic-single-embed").attr("disabled", true);
@@ -140,17 +140,17 @@ function ajaxFetchSelect2() {
       $("#btnHtUrl").removeClass("cursor-not-allowed");
       $("#btnHtUrl").addClass("cursor-pointer");
     },
-    success: function (data, textStatus, jqXHR) {
+    success: function (dt, textStatus, jqXHR) {
       $("#btnHtUrl").attr("disabled", false);
       $("#btnHtUrl").removeClass("cursor-not-allowed");
       $("#btnHtUrl").addClass("cursor-pointer");
-      const jsonParseMessage = JSON.parse(data.message.trim());
+      const jsonParseMessage = JSON.parse(dt.message.trim());
       if (Array.isArray(jsonParseMessage)) {
         toastr.success("successfully response fetch");
         $(".basic-single-embed").attr("disabled", false);
         $(".basic-single-chat").attr("disabled", false);
         jsonParseMessage.forEach(function (v) {
-          dataModelsArray.push({ id: v.model, text: v.model });
+          data.ModelsArray.push({ id: v.model, text: v.model });
         });
       }
     },
@@ -163,14 +163,13 @@ function ajaxFetchSelect2() {
 $("body").on("click", "#btnHtUrl", function (e) {
   e.preventDefault();
   ajaxFetchSelect2();
-
   $(".basic-single-embed").select2({
     placeholder: "Search for a Models Embed",
-    data: dataModelsArray,
+    data: data.ModelsArray,
   });
   $(".basic-single-chat").select2({
     placeholder: "Search for a Models Chat",
-    data: dataModelsArray,
+    data: data.ModelsArray,
   });
   $("#file").addClass("cursor-pointer");
   $("#file").removeClass("cursor-not-allowed");
