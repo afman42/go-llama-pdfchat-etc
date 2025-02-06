@@ -88,9 +88,14 @@ func main() {
 		logger.Fatalln(err)
 		return
 	}
+	targetFile := "./logs/application.log"
+	broadcaster := utils.NewBroadcaster()
+	go broadcaster.Run()
+	go broadcaster.TailFile(targetFile, logger)
 	mux := http.NewServeMux()
 	handler := utils.WrapHandlerWithLogging(http.HandlerFunc(index), logger)
 	mux.Handle("/", handler)
+	mux.HandleFunc("/ws", utils.HandleWebSocketConnection(broadcaster, targetFile, logger))
 	if Mode == ModePreview || Mode == ModeProd {
 		mux.Handle("/assets/", http.FileServer(http.FS(dist)))
 		// Static Folder web/public
