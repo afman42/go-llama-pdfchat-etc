@@ -295,3 +295,21 @@ $("#formUpload").on("submit", function (e) {
     },
   });
 });
+var ws = new WebSocket("ws://" + API_URL.split("//")[1] + "/ws");
+ws.onopen = function (event) {
+  console.log("Connection is open ...");
+};
+
+ws.onerror = function (err) {
+  console.log("err: ", err, err.toString());
+};
+
+// Event handler for receiving text from the server
+ws.onmessage = function (event) {
+  console.log("Received: " + event.data);
+  $("#logStdout").text(event.data);
+};
+
+ws.onclose = function () {
+  console.log("Connection is closed...");
+};
