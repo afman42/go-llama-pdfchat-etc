@@ -46,7 +46,7 @@ $("#app").html(
       </div>
     </div>
     <span class="min-sm:text-sm">Log:</span>
-    <div class="flex border-2 border-black border-solid w-full h-48 overflow-x-scroll " id="logStdout">
+    <div class="flex border-2 border-black border-solid w-full h-48 overflow-y-scroll flex-col" id="logStdout">
     </div>
   </main>`,
 );
@@ -58,6 +58,7 @@ data.txt = $("#txt").val();
 data.modelChat = "";
 data.modelEmbed = "";
 data.ModelsArray = [];
+data.stdout = "";
 $("#txt").addClass("cursor-not-allowed");
 $("#file").attr("disabled", true);
 $("#rmvfl").hide();
@@ -311,8 +312,14 @@ ws.onerror = function (err) {
 
 // Event handler for receiving text from the server
 ws.onmessage = function (event) {
+  if (data.stdout != event.data) {
+    data.stdout = data.stdout + event.data + "\n";
+  }
+  let txt = data.stdout.split(/\n/).map(function (line) {
+    return "<h6 class='flex py-2 px-1'>" + line + "</line>";
+  });
   console.log("Received: " + event.data);
-  $("#logStdout").text(event.data);
+  $("#logStdout").html(txt);
 };
 
 ws.onclose = function () {
