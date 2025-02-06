@@ -24,12 +24,12 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 
 func WrapHandlerWithLogging(wrappedHandler http.Handler, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		logger.Printf("--> %s %s", req.Method, req.URL.Path)
+		logger.Printf("--> %s %s ip user: %s", req.Method, req.URL.Path, ReadUserIP(req))
 
 		lrw := NewLoggingResponseWriter(w)
 		wrappedHandler.ServeHTTP(lrw, req)
 
 		statusCode := lrw.statusCode
-		logger.Printf("<-- %d %s", statusCode, http.StatusText(statusCode))
+		logger.Printf("<-- %d %s ip user: %s", statusCode, http.StatusText(statusCode), ReadUserIP(req))
 	})
 }
