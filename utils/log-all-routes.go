@@ -22,14 +22,14 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 	lrw.ResponseWriter.WriteHeader(code)
 }
 
-func WrapHandlerWithLogging(wrappedHandler http.Handler) http.Handler {
+func WrapHandlerWithLogging(wrappedHandler http.Handler, logger *log.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		log.Printf("--> %s %s", req.Method, req.URL.Path)
+		logger.Printf("--> %s %s", req.Method, req.URL.Path)
 
 		lrw := NewLoggingResponseWriter(w)
 		wrappedHandler.ServeHTTP(lrw, req)
 
 		statusCode := lrw.statusCode
-		log.Printf("<-- %d %s", statusCode, http.StatusText(statusCode))
+		logger.Printf("<-- %d %s", statusCode, http.StatusText(statusCode))
 	})
 }
