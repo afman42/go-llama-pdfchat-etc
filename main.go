@@ -41,10 +41,10 @@ func main() {
 	if _, err := os.Stat("./tmp"); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.Mkdir("tmp", os.ModePerm); err != nil {
-				logger.Fatal(err)
+				logger.Fatalln(err)
 			}
 			if err := os.Mkdir("logs", os.ModePerm); err != nil {
-				logger.Fatal(err)
+				logger.Fatalln(err)
 			}
 		}
 	}
