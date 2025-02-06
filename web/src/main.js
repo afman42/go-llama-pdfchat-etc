@@ -295,7 +295,8 @@ $("#formUpload").on("submit", function (e) {
     },
   });
 });
-var ws = new WebSocket("ws://" + API_URL.split("//")[1] + "/ws");
+let wsport = import.meta.env.PROD ? "wss://" : "ws://";
+var ws = new WebSocket(wsport + API_URL.split("//")[1] + "/ws");
 ws.onopen = function (event) {
   console.log("Connection is open ...");
 };
