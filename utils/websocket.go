@@ -136,7 +136,6 @@ func HandleWebSocketConnection(b *Broadcaster, filePath string, logger *log.Logg
 }
 
 func (b *Broadcaster) TailFile(filepath string, logger *log.Logger) {
-	//Need Refactor
 	t, err := tail.TailFile(
 		filepath,
 		tail.Config{Location: &tail.SeekInfo{Offset: 0, Whence: 2}, Follow: true},
