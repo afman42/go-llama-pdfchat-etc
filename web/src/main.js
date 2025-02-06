@@ -295,7 +295,11 @@ $("#formUpload").on("submit", function (e) {
     },
   });
 });
-let wsport = import.meta.env.PROD ? "wss://" : "ws://";
+console.log(import.meta.env.MODE);
+let wsport =
+  import.meta.env.MODE != "staging" && import.meta.env.MODE != "development"
+    ? "wss://"
+    : "ws://";
 var ws = new WebSocket(wsport + API_URL.split("//")[1] + "/ws");
 ws.onopen = function (event) {
   console.log("Connection is open ...");
