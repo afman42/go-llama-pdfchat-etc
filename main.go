@@ -23,7 +23,10 @@ import (
 //go:embed web/dist
 var WebContent embed.FS
 
-var IpCors string
+var (
+	IpCors string
+	logger *log.Logger
+)
 
 const (
 	ModeDev     = "dev"
@@ -34,6 +37,23 @@ const (
 func main() {
 	Mode := ModeDev
 	env := ".env.local"
+	logger = log.New(os.Stdout, "", log.LstdFlags|log.Ltime)
+	if _, err := os.Stat("./tmp"); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.Mkdir("tmp", os.ModePerm); err != nil {
+				logger.Fatal(err)
+			}
+			if err := os.Mkdir("logs", os.ModePerm); err != nil {
+				logger.Fatal(err)
+			}
+		}
+	}
+
+	open, err := os.OpenFile("./logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		logger.Fatalln(err)
+	}
+	logger.SetOutput(open)
 	flag.Func("mode", "mode:dev,preview,prod", func(s string) error {
 		if s == ModePreview {
 			Mode = ModePreview
@@ -47,36 +67,29 @@ func main() {
 	})
 	flag.Parse()
 
-	err := godotenv.Load(env)
+	err = godotenv.Load(env)
 	if err != nil {
-		log.Fatal("Error loading " + env + " file")
+		logger.Fatalln("Error loading " + env + " file")
 	}
 	IpCors = os.Getenv("CORS_DOMAIN")
 	Port := os.Getenv("APP_PORT")
-	if _, err := os.Stat("./tmp"); err != nil {
-		if os.IsNotExist(err) {
-			if err := os.Mkdir("tmp", os.ModePerm); err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
 
 	files, err := filepath.Glob(utils.PathFileTemp("*"))
 	if err != nil {
-		panic(err)
+		logger.Fatalln(err)
 	}
 	for _, f := range files {
 		if err := os.Remove(f); err != nil {
-			panic(err)
+			logger.Fatalln(err)
 		}
 	}
 	dist, err := fs.Sub(WebContent, "web/dist")
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalln(err)
 		return
 	}
 	mux := http.NewServeMux()
-	handler := utils.WrapHandlerWithLogging(http.HandlerFunc(index))
+	handler := utils.WrapHandlerWithLogging(http.HandlerFunc(index), logger)
 	mux.Handle("/", handler)
 	if Mode == ModePreview || Mode == ModeProd {
 		mux.Handle("/assets/", http.FileServer(http.FS(dist)))
@@ -85,6 +98,7 @@ func main() {
 			data, err := WebContent.ReadFile("web/dist/vite.svg")
 			if err != nil {
 				http.Error(w, "File not found", http.StatusNotFound)
+				logger.Println("File not found: vite.svg")
 				return
 			}
 			w.Header().Set("Content-Type", "image/svg+xml")
@@ -92,16 +106,19 @@ func main() {
 			w.Write(data)
 		}))
 	}
+	logger.Println("Server starting in localhost:" + Port)
 	fmt.Println("Server starting in localhost:" + Port)
 	err = http.ListenAndServe(":"+Port, mux)
 	if err != nil {
-		log.Fatal("Something went wrong", err)
+		logger.Fatalf("Something went wrong %s", err.Error())
+		fmt.Println("Something went wrong", err.Error())
 		os.Exit(1)
 	}
 }
 func index(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
+		logger.Println("URL Path: Not Found")
 		return
 	}
 	w.Header().Set("Access-Control-Allow-Origin", IpCors)
@@ -112,12 +129,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 		var tmp, err = template.ParseFS(WebContent, "web/dist/index.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			logger.Println(err)
 			return
 		}
 		w.Header().Add("Content-Type", "text/html")
 		err = tmp.Execute(w, nil)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			logger.Println(err)
 			return
 		}
 
@@ -131,6 +150,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 				all, err := e.ListModels(ctx)
 				if err != nil {
 					utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, add list models")
+					logger.Println("Something went wrong, add list models")
 					return
 				}
 				a, _ := json.Marshal(all)
@@ -138,11 +158,13 @@ func index(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, query listModel not found")
+			logger.Println("Something went wrong, query listModel not found")
 			return
 		}
 		err := r.ParseMultipartForm(1 * MB)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, upload file")
+			logger.Println(err)
 			return
 		}
 
@@ -151,25 +173,31 @@ func index(w http.ResponseWriter, r *http.Request) {
 		fileLocation, err := utils.UploadFile(w, r, "file")
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
+			logger.Println(err)
 			return
 		}
 		txt := strings.TrimSpace(r.FormValue("txt"))
 		if txt == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input question")
+			logger.Println("Please fill input question")
 			return
 		}
 		modelEmbed := strings.TrimSpace(r.FormValue("modelEmbed"))
 		if modelEmbed == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input model Embedding")
+			logger.Println("Please fill input model Embedding")
 			return
 		}
 		modelChat := strings.TrimSpace(r.FormValue("modelChat"))
 		if modelChat == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "please fill input model chat")
+			logger.Println("please fill input model chat")
 			return
 		}
 		fmt.Println("Embedding model:", modelEmbed)
+		logger.Println("Embedding model:", modelEmbed)
 		fmt.Println("Chat model:", modelChat)
+		logger.Println("Chat model:", modelChat)
 		configEmbedding := gollama.Gollama{
 			ServerAddr: os.Getenv("OLLAMA_HOST"),
 			ModelName:  modelEmbed,
@@ -181,29 +209,36 @@ func index(w http.ResponseWriter, r *http.Request) {
 			Verbose:    true,
 		}
 		e := gollama.NewWithConfig(configEmbedding)
+		logger.Println(e)
 		_, err = e.HasModel(ctx, modelEmbed)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
+			logger.Println(err)
 			return
 		}
 
 		c := gollama.NewWithConfig(configChat)
+		logger.Println(e)
 		_, err = c.HasModel(ctx, modelChat)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
+			logger.Println(err)
 			return
 		}
 
 		f, err := os.ReadFile(fileLocation)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
+			logger.Println(err)
 			return
 		}
 		text := string(f)
 		fmt.Println("File ", fileLocation, "has", len(text), "bytes...")
+		logger.Println("File ", fileLocation, "has", len(text), "bytes...")
 		// Chunk the text
 		chunks := chunker.ChunkSentences(text)
 		fmt.Println("Total chunks:", len(chunks))
+		logger.Println("Total chunks:", len(chunks))
 		// Embed the chunks
 		embeds := make([][]float64, 0)
 		for _, chunk := range chunks {
@@ -224,6 +259,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 			embeddings = append(embeddings, tEmbedding{Chunk: chunks[i], Embed: embedding})
 		}
 		fmt.Println("Total embeddings:", len(embeddings))
+		logger.Println("Total embeddings:", len(embeddings))
 		// Get the question embedding
 		question_emb, _ := e.Embedding(ctx, txt)
 
@@ -233,12 +269,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 			similarity := gollama.CosenoSimilarity(question_emb, embedding.Embed)
 			if similarity > 0.65 {
 				fmt.Println("> Context:", embedding.Chunk+" (Similarity: "+fmt.Sprintf("%.2f", similarity)+")")
+				logger.Println("> Context:", embedding.Chunk+" (Similarity: "+fmt.Sprintf("%.2f", similarity)+")")
 				contexts = append(contexts, embedding.Chunk)
 			}
 		}
 
 		if len(contexts) == 0 {
 			fmt.Println("> No context found")
+			logger.Println("> No context found")
 			utils.JsonResponse(w, http.StatusOK, "No context found, so get another question")
 			return
 		}
@@ -247,21 +285,25 @@ func index(w http.ResponseWriter, r *http.Request) {
 			"Context:\n" + strings.Join(contexts, "\n") + "\n\nQuestion:\n" + txt
 
 		fmt.Println("Prompt:", prompt)
-
+		logger.Println(prompt)
 		// Get the answer
 		answer, err := c.Chat(ctx, prompt)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
+			logger.Println(err)
 			return
 		}
+		logger.Println("Answer Question: ", answer.Content)
 		utils.JsonResponse(w, http.StatusOK, answer.Content)
 		return
 	case http.MethodOptions:
 		w.Header().Set("Allow", "GET, POST, OPTIONS")
+		logger.Println("You caught in method OPTIONS")
 		w.WriteHeader(http.StatusNoContent)
 
 	default:
 		w.Header().Set("Allow", "GET, POST, OPTIONS")
+		logger.Println("You caught in method not allowed")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
