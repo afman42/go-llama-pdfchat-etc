@@ -4,3 +4,4 @@ tmp/
 upx
 upx.1
 deploy.tar
+logs/application.log
