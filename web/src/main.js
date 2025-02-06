@@ -258,6 +258,8 @@ $("#formUpload").on("submit", function (e) {
       if (formData.has("txt")) {
         formData.delete("txt");
       }
+
+      $("#txtContainer").scrollTop($("#txtContainer")[0].scrollHeight);
     },
     success: function (data, textStatus, jqXHR) {
       $("body *").removeAttr("disabled");
@@ -277,6 +279,8 @@ $("#formUpload").on("submit", function (e) {
           "- 🤖" +
           "</h6>",
       );
+
+      $("#txtContainer").scrollTop($("#txtContainer")[0].scrollHeight);
     },
     error: function (jqXhr, textStatus, errorThrown) {
       console.log({ jqXhr, textStatus, errorThrown });
@@ -316,10 +320,11 @@ ws.onmessage = function (event) {
     data.stdout = data.stdout + event.data + "\n";
   }
   let txt = data.stdout.split(/\n/).map(function (line) {
-    return "<h6 class='flex py-2 px-1'>" + line + "</line>";
+    return "<h6 class='flex p-1'>" + line + "</line>";
   });
   console.log("Received: " + event.data);
   $("#logStdout").html(txt);
+  $("#logStdout").scrollTop($("#logStdout")[0].scrollHeight);
 };
 
 ws.onclose = function () {
