@@ -46,7 +46,7 @@ $("#app").html(
       </div>
     </div>
     <span class="min-sm:text-sm">Log:</span>
-    <div class="flex border-2 border-black border-solid w-full h-48 overflow-y-scroll flex-col" id="logStdout">
+    <div class="flex border-2 border-black border-solid w-full h-48 p-2 overflow-y-scroll flex-col" id="logStdout">
     </div>
   </main>`,
 );
@@ -320,7 +320,7 @@ ws.onmessage = function (event) {
     data.stdout = data.stdout + event.data + "\n";
   }
   let txt = data.stdout.split(/\n/).map(function (line) {
-    return "<h6 class='flex p-1'>" + line + "</line>";
+    return "<h6 class='flex'>" + line + "</h6>";
   });
   console.log("Received: " + event.data);
   $("#logStdout").html(txt);
