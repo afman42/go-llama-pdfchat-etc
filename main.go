@@ -37,6 +37,11 @@ const (
 func main() {
 	Mode := ModeDev
 	env := ".env.local"
+	dir, err := os.Getwd()
+	if err != nil {
+		logger.Fatalf("from check folder: %s", err.Error())
+	}
+	fileLog := filepath.Join(dir, "logs", "application.log")
 	logger = log.New(os.Stdout, "", log.LstdFlags|log.Ltime)
 	if _, err := os.Stat("./tmp"); err != nil {
 		if os.IsNotExist(err) {
@@ -49,9 +54,9 @@ func main() {
 		}
 	}
 
-	open, err := os.OpenFile("./logs/application.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	open, err := os.OpenFile(fileLog, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		logger.Fatalln(err)
+		logger.Fatal(err.Error())
 	}
 	logger.SetOutput(open)
 	flag.Func("mode", "mode:dev,preview,prod", func(s string) error {
@@ -74,7 +79,7 @@ func main() {
 	IpCors = os.Getenv("CORS_DOMAIN")
 	Port := os.Getenv("APP_PORT")
 
-	files, err := filepath.Glob(utils.PathFileTemp("*"))
+	files, err := filepath.Glob(utils.PathFileTemp("*", logger))
 	if err != nil {
 		logger.Fatalln(err)
 	}
@@ -86,16 +91,14 @@ func main() {
 	dist, err := fs.Sub(WebContent, "web/dist")
 	if err != nil {
 		logger.Fatalln(err)
-		return
 	}
-	targetFile := "./logs/application.log"
 	broadcaster := utils.NewBroadcaster()
 	go broadcaster.Run()
-	go broadcaster.TailFile(targetFile, logger)
+	go broadcaster.TailFile(fileLog, logger)
 	mux := http.NewServeMux()
 	handler := utils.WrapHandlerWithLogging(http.HandlerFunc(index), logger)
 	mux.Handle("/", handler)
-	mux.HandleFunc("/ws", utils.HandleWebSocketConnection(broadcaster, targetFile, logger))
+	mux.HandleFunc("/ws", utils.HandleWebSocketConnection(broadcaster, fileLog, logger))
 	if Mode == ModePreview || Mode == ModeProd {
 		mux.Handle("/assets/", http.FileServer(http.FS(dist)))
 		// Static Folder web/public
@@ -117,7 +120,6 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Something went wrong %s", err.Error())
 		fmt.Println("Something went wrong", err.Error())
-		os.Exit(1)
 	}
 }
 func index(w http.ResponseWriter, r *http.Request) {
@@ -134,14 +136,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 		var tmp, err = template.ParseFS(WebContent, "web/dist/index.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			logger.Println(err)
+			logger.Println(err.Error())
 			return
 		}
-		w.Header().Add("Content-Type", "text/html")
+		w.Header().Set("Content-Type", "text/html")
 		err = tmp.Execute(w, nil)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			logger.Println(err)
+			logger.Println(err.Error())
 			return
 		}
 
@@ -169,16 +171,16 @@ func index(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseMultipartForm(1 * MB)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, upload file")
-			logger.Println(err)
+			logger.Println(err.Error())
 			return
 		}
 
 		r.Body = http.MaxBytesReader(w, r.Body, 1*MB)
 
-		fileLocation, err := utils.UploadFile(w, r, "file")
+		fileLocation, err := utils.UploadFile(w, r, "file", logger)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
-			logger.Println(err)
+			logger.Println(err.Error())
 			return
 		}
 		txt := strings.TrimSpace(r.FormValue("txt"))
@@ -218,7 +220,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 		_, err = e.HasModel(ctx, modelEmbed)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
-			logger.Println(err)
+			logger.Printf("error check model embed: %s", err.Error())
 			return
 		}
 
@@ -227,14 +229,14 @@ func index(w http.ResponseWriter, r *http.Request) {
 		_, err = c.HasModel(ctx, modelChat)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
-			logger.Println(err)
+			logger.Printf("error check model chat: %s", err.Error())
 			return
 		}
 
 		f, err := os.ReadFile(fileLocation)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
-			logger.Println(err)
+			logger.Printf("error readfile: %s", err.Error())
 			return
 		}
 		text := string(f)
@@ -250,6 +252,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 			embedding, err := e.Embedding(ctx, chunk)
 			if err != nil {
 				utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
+				logger.Printf("error chunks: %s", err.Error())
 				return
 			}
 			embeds = append(embeds, embedding)
