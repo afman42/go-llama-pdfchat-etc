@@ -122,6 +122,14 @@ func main() {
 		fmt.Println("Something went wrong", err.Error())
 	}
 }
+
+type Data struct {
+	Txt          string `json:"txt"`
+	FileLocation string `json:"fileLocation"`
+	ModelChat    string `json:"modelChat"`
+	ModelEmbed   string `json:"modelEmbed"`
+}
+
 func index(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -150,6 +158,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		const MB = 1 << 20
 		ctx := context.Background()
+		var data Data
 		if listModel := r.URL.Query().Has("listModel"); listModel {
 			q := r.URL.Query().Get("listModel")
 			if q == "all" {
@@ -168,34 +177,56 @@ func index(w http.ResponseWriter, r *http.Request) {
 			logger.Println("Something went wrong, query listModel not found")
 			return
 		}
-		err := r.ParseMultipartForm(1 * MB)
-		if err != nil {
-			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, upload file")
-			logger.Println(err.Error())
+		if UploadFileCheck := r.URL.Query().Has("upload"); UploadFileCheck {
+			q := r.URL.Query().Get("upload")
+			if q == "file" {
+				err := r.ParseMultipartForm(1 * MB)
+				if err != nil {
+					utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, upload file")
+					logger.Println(err.Error())
+					return
+				}
+
+				r.Body = http.MaxBytesReader(w, r.Body, 1*MB)
+
+				fileLocation, err := utils.UploadFile(w, r, "fileLocation", logger)
+				if err != nil {
+					utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
+					logger.Println(err.Error())
+					return
+				}
+				utils.JsonResponse(w, http.StatusOK, fileLocation)
+				return
+			}
+			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong, query upload not found")
+			logger.Println("Something went wrong, query upload not found")
 			return
 		}
-
-		r.Body = http.MaxBytesReader(w, r.Body, 1*MB)
-
-		fileLocation, err := utils.UploadFile(w, r, "file", logger)
+		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
-			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
-			logger.Println(err.Error())
+			utils.JsonResponse(w, http.StatusInternalServerError, "Something went wrong parse json")
+			logger.Println("Something went wrong parse json")
 			return
 		}
-		txt := strings.TrimSpace(r.FormValue("txt"))
+		fileLoc := strings.TrimSpace(data.FileLocation)
+		if fileLoc == "" {
+			utils.JsonResponse(w, http.StatusBadRequest, "Please upload file")
+			logger.Println("Please upload file")
+			return
+		}
+		txt := strings.TrimSpace(data.Txt)
 		if txt == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input question")
 			logger.Println("Please fill input question")
 			return
 		}
-		modelEmbed := strings.TrimSpace(r.FormValue("modelEmbed"))
+		modelEmbed := strings.TrimSpace(data.ModelEmbed)
 		if modelEmbed == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input model Embedding")
 			logger.Println("Please fill input model Embedding")
 			return
 		}
-		modelChat := strings.TrimSpace(r.FormValue("modelChat"))
+		modelChat := strings.TrimSpace(data.ModelChat)
 		if modelChat == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "please fill input model chat")
 			logger.Println("please fill input model chat")
@@ -233,15 +264,15 @@ func index(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		f, err := os.ReadFile(fileLocation)
+		f, err := os.ReadFile(fileLoc)
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
 			logger.Printf("error readfile: %s", err.Error())
 			return
 		}
 		text := string(f)
-		fmt.Println("File ", fileLocation, "has", len(text), "bytes...")
-		logger.Println("File ", fileLocation, "has", len(text), "bytes...")
+		fmt.Println("File ", fileLoc, "has", len(text), "bytes...")
+		logger.Println("File ", fileLoc, "has", len(text), "bytes...")
 		// Chunk the text
 		chunks := chunker.ChunkSentences(text)
 		fmt.Println("Total chunks:", len(chunks))
