@@ -14,7 +14,7 @@
 - lama atau cepat pemrosesan tergantung spesifikasi sistem pc, laptop maupun server
 - File example,bentukan harus dokumen, disclaimer utk di testing
   - text.txt : `https://github.com/jonathanhecl/gollama/blob/main/examples/rag/text.txt`
-  - helloworld.pdf : `https://github.com/mozilla/pdf.js-sample-files/blob/master/helloworld.pdf`
+  - Lorem_ipsum.pdf : searching google
 
 ## Todo
 
