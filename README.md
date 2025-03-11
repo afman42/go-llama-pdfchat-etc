@@ -8,7 +8,7 @@
 - Install Cmake Terbaru
 - UPX (compress file)
 - Model Embedding
-  - How to chat pdf, use model `mistral`
+  - How to chat pdf, use model `mistral` - `Not Work`
   - How to chat txt, use model `nomic-embed-text`
 - Model Chat, use model `llama3`, `qwen`, `deepseek`
 - lama atau cepat pemrosesan tergantung spesifikasi sistem pc, laptop maupun server
