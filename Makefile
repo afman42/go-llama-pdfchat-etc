@@ -50,7 +50,7 @@ deploy:
 
 deploy/tar:
 	rm -f deploy.tar;
-	tar -zcvf deploy.tar ./bin/linux_amd64/app ./web/dist/ Dockerfile captain-definition .env.prod;
+	tar -zcvf deploy.tar ./bin/linux_amd64/app ./web/dist/ Dockerfile captain-definition .env.prod ./pdf2txt;
 
 deploy/prod: build deploy/tar deploy
 
