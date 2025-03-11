@@ -60,6 +60,21 @@ data.modelEmbed = "";
 data.ModelsArray = [];
 data.stdout = "";
 data.fileLocation = "";
+data.idx = 0;
+
+//Ref: Javascript Live Text typing - stackoverflow
+function writeText(textSpace, element, idx, timeout = 150) {
+  var currentLetter = 1;
+  function nextLetter() {
+    $(element).children("h6")[idx].innerHTML = textSpace.slice(
+      0,
+      currentLetter,
+    );
+    if (++currentLetter <= textSpace.length) setTimeout(nextLetter, timeout);
+  }
+  nextLetter();
+}
+
 $("#txt").addClass("cursor-not-allowed");
 $("#file").attr("disabled", true);
 $("#rmvfl").hide();
@@ -280,7 +295,10 @@ $("#formUpload").on("submit", function (e) {
       " - 👤" +
       "</h6>",
   );
+  let even = data.idx == 0 ? 1 : 2;
+  data.idx = data.idx + even;
 
+  $("#txtContainer").scrollTop($("#txtContainer")[0].scrollHeight);
   $.ajax({
     url: API_URL,
     method: "post",
@@ -330,6 +348,10 @@ $("#formUpload").on("submit", function (e) {
     },
     success: function (dt, textStatus, jqXHR) {
       const jsonParseMessage = JSON.parse(dt.trim());
+      $("#txtContainer").append(
+        '<h6 class="flex bg-amber-100 w-full px-2 py-1 rounded-lg break-all">- 🤖</h6>',
+      );
+      writeText(jsonParseMessage.message + "- 🤖", "#txtContainer", data.idx);
       $("body *").removeAttr("disabled");
       $("body").removeAttr("style");
       $("#btnHtUrl").attr("disabled", false);
@@ -340,12 +362,6 @@ $("#formUpload").on("submit", function (e) {
       $("#txt").attr("disabled", false);
       $("#rmvfl").attr("disabled", false);
       toastr.success("successfully response fetch");
-      $("#txtContainer").append(
-        '<h6 class="flex bg-amber-100 w-full px-2 py-1 rounded-lg break-all">' +
-          jsonParseMessage.message +
-          "- 🤖" +
-          "</h6>",
-      );
 
       $("#txtContainer").scrollTop($("#txtContainer")[0].scrollHeight);
     },
