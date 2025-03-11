@@ -34,14 +34,10 @@ $("#app").html(
       <label for="remote-url" class="block min-sm:text-sm">Fetch Models
           <button type="button" id="btnHtUrl" class="flex w-full py-2 bg-amber-500 cursor-pointer rounded-lg hover:bg-white hover:border-solid hover:border-amber-500 hover:border-2 hover:text-black text-white justify-center items-center min-sm:text-sm">Fetch</button>
       </label>
-      <div class="grid grid-cols-2 gap-2 flex-row w-full">
-        <label for="embedding" class="flex flex-col">
-          <h6 class="flex flex-row my-2 min-sm:block min-sm:text-xs"><a href="https://ollama.com/search?c=embedding" target="_blank" class="text-blue-500 ml-2">Link models Embed</a></h6>
-          <input type="hidden" class="basic-single-embed flex"/>
-        </label>
-        <label for="chat" class="flex flex-col">
-          <span class="flex flex-row my-2 min-sm:block min-sm:text-xs"><a href="https://ollama.com/search" target="_blank" class="ml-2 flex text-blue-500">Link models Chat</a></span>
-          <input type="hidden" class="basic-single-chat flex"/>
+      <div class="flex w-full">
+        <label for="chat" class="flex flex-col w-full">
+          <h6 class="flex flex-row my-2 min-sm:block min-sm:text-xs"><a href="https://ollama.com/models" target="_blank" class="text-blue-500 ml-2">Link models Chat</a></h6>
+          <input type="hidden" class="basic-single-chat flex w-full"/>
         </label>
       </div>
     </div>
@@ -56,7 +52,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 let data = {};
 data.txt = "";
 data.modelChat = "";
-data.modelEmbed = "";
 data.ModelsArray = [];
 data.stdout = "";
 data.fileLocation = "";
@@ -82,11 +77,6 @@ $("#file").on("change", function (e) {
   let fileList = e.target.files;
   if (data.modelChat == "") {
     toastr.warning("please fill model chat");
-    $(this).val("");
-    return;
-  }
-  if (data.modelEmbed == "") {
-    toastr.warning("please fill model embed");
     $(this).val("");
     return;
   }
@@ -125,17 +115,11 @@ $("body").on("click", "#rmvfl", function (e) {
   $("#rmvfl").hide();
 });
 
-$(".basic-single-embed").select2({
-  placeholder: "Search for a Models Embed",
-  data: data.ModelsArray,
-});
-
 $(".basic-single-chat").select2({
   placeholder: "Search for a Models Chat",
   data: data.ModelsArray,
 });
 
-$(".basic-single-embed").attr("disabled", true);
 $(".basic-single-chat").attr("disabled", true);
 
 function ajaxUploadFile(formDataUpload) {
@@ -205,7 +189,6 @@ function ajaxFetchSelect2() {
     method: "post",
     dataType: "json",
     beforeSend: function (jqXHR, settings) {
-      $(".basic-single-embed").attr("disabled", true);
       $(".basic-single-chat").attr("disabled", true);
       $("#btnHtUrl").attr("disabled", true);
       toastr.info("info fetch models");
@@ -224,7 +207,6 @@ function ajaxFetchSelect2() {
       const jsonParseMessage = JSON.parse(dt.message.trim());
       if (Array.isArray(jsonParseMessage)) {
         toastr.success("successfully response fetch");
-        $(".basic-single-embed").attr("disabled", false);
         $(".basic-single-chat").attr("disabled", false);
         jsonParseMessage.forEach(function (v) {
           data.ModelsArray.push({ id: v.model, text: v.model });
@@ -240,10 +222,6 @@ function ajaxFetchSelect2() {
 $("body").on("click", "#btnHtUrl", function (e) {
   e.preventDefault();
   ajaxFetchSelect2();
-  $(".basic-single-embed").select2({
-    placeholder: "Search for a Models Embed",
-    data: data.ModelsArray,
-  });
   $(".basic-single-chat").select2({
     placeholder: "Search for a Models Chat",
     data: data.ModelsArray,
@@ -253,13 +231,6 @@ $("body").on("click", "#btnHtUrl", function (e) {
   $("#file").attr("disabled", false);
 });
 
-$(".basic-single-embed").on("change", function (e) {
-  const value = e.target.value;
-  if (data.modelEmbed) {
-    data.modelEmbed = "";
-  }
-  data.modelEmbed = value;
-});
 $(".basic-single-chat").on("change", function (e) {
   const value = e.target.value;
   if (data.modelChat) {
@@ -284,11 +255,6 @@ $("#formUpload").on("submit", function (e) {
     return;
   }
 
-  if (data.modelEmbed == "") {
-    toastr.warning("please fill model embed");
-    return;
-  }
-
   $("#txtContainer").append(
     '<h6 class="flex bg-gray-100 w-full px-2 py-1 rounded-lg break-all">' +
       data.txt +
@@ -305,15 +271,13 @@ $("#formUpload").on("submit", function (e) {
     data: JSON.stringify({
       txt: data.txt,
       fileLocation: data.fileLocation,
-      modelChat: data.modelChat,
-      modelEmbed: data.modelEmbed,
+      modelChat: data.modelChat
     }),
     cache: false,
     processData: false,
     contentType: "application/json;charset=UTF-8",
     beforeSend: function (jqXHR, settings) {
       $("body *").attr("disabled", "disabled").off("click");
-      $(".basic-single-embed").attr("disabled", true);
       $(".basic-single-chat").attr("disabled", true);
       $("#btnHtUrl").attr("disabled", true);
       $("#send").attr("disabled", true);
@@ -355,7 +319,6 @@ $("#formUpload").on("submit", function (e) {
       $("body *").removeAttr("disabled");
       $("body").removeAttr("style");
       $("#btnHtUrl").attr("disabled", false);
-      $(".basic-single-embed").attr("disabled", false);
       $(".basic-single-chat").attr("disabled", false);
       $("#btnHtUrl").attr("disabled", false);
       $("#send").attr("disabled", false);
