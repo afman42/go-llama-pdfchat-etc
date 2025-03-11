@@ -53,7 +53,6 @@ func main() {
 			}
 		}
 	}
-
 	open, err := os.OpenFile(fileLog, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -127,7 +126,6 @@ type Data struct {
 	Txt          string `json:"txt"`
 	FileLocation string `json:"fileLocation"`
 	ModelChat    string `json:"modelChat"`
-	ModelEmbed   string `json:"modelEmbed"`
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -189,11 +187,20 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 				r.Body = http.MaxBytesReader(w, r.Body, 1*MB)
 
-				fileLocation, err := utils.UploadFile(w, r, "fileLocation", logger)
+				fileLocation, filename, err := utils.UploadFile(w, r, "fileLocation", logger)
 				if err != nil {
 					utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
 					logger.Println(err.Error())
 					return
+				}
+				if strings.Contains(fileLocation, ".pdf") {
+					filePath, err := utils.RunShellCMDPdf2Txt(logger, fileLocation, filename)
+					if err != nil {
+						utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
+						logger.Printf("error cmd: %s", err.Error())
+						return
+					}
+					fileLocation = filePath
 				}
 				utils.JsonResponse(w, http.StatusOK, fileLocation)
 				return
@@ -220,25 +227,17 @@ func index(w http.ResponseWriter, r *http.Request) {
 			logger.Println("Please fill input question")
 			return
 		}
-		modelEmbed := strings.TrimSpace(data.ModelEmbed)
-		if modelEmbed == "" {
-			utils.JsonResponse(w, http.StatusBadRequest, "Please fill input model Embedding")
-			logger.Println("Please fill input model Embedding")
-			return
-		}
 		modelChat := strings.TrimSpace(data.ModelChat)
 		if modelChat == "" {
 			utils.JsonResponse(w, http.StatusBadRequest, "please fill input model chat")
 			logger.Println("please fill input model chat")
 			return
 		}
-		fmt.Println("Embedding model:", modelEmbed)
-		logger.Println("Embedding model:", modelEmbed)
 		fmt.Println("Chat model:", modelChat)
 		logger.Println("Chat model:", modelChat)
 		configEmbedding := gollama.Gollama{
 			ServerAddr: os.Getenv("OLLAMA_HOST"),
-			ModelName:  modelEmbed,
+			ModelName:  "nomic-embed-text:latest",
 			Verbose:    true,
 		}
 		configChat := gollama.Gollama{
@@ -248,7 +247,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 		}
 		e := gollama.NewWithConfig(configEmbedding)
 		logger.Println(e)
-		_, err = e.HasModel(ctx, modelEmbed)
+		_, err = e.HasModel(ctx, "nomic-embed-text:latest")
 		if err != nil {
 			utils.JsonResponse(w, http.StatusInternalServerError, err.Error())
 			logger.Printf("error check model embed: %s", err.Error())
