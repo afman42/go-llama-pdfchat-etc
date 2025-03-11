@@ -30,23 +30,23 @@ func StringWithCharset(length int) string {
 	return string(b)
 }
 
-func UploadFile(w http.ResponseWriter, r *http.Request, name string, logger *log.Logger) (string, error) {
+func UploadFile(w http.ResponseWriter, r *http.Request, name string, logger *log.Logger) (string, string, error) {
 	uploadedFile, handler, err := r.FormFile(name)
 	if err != nil {
 		logger.Printf("failed to get file: %s", err.Error())
-		return "", fmt.Errorf("failed to get file: %w", err)
+		return "", "", fmt.Errorf("failed to get file: %w", err)
 	}
 	defer uploadedFile.Close()
 
 	_, err = getFileContentType(handler.Filename, logger)
 	if err != nil {
 		logger.Printf("failed to get content type for file %s: %s", handler.Filename, err.Error())
-		return "", fmt.Errorf(`failed to get content type for file "%s": %w`, handler.Filename, err)
+		return "", "", fmt.Errorf(`failed to get content type for file "%s": %w`, handler.Filename, err)
 	}
 	dir, err := os.Getwd()
 	if err != nil {
 		logger.Println("failed get directory: %w", err)
-		return "", fmt.Errorf("failed get directory: %w", err)
+		return "", "", fmt.Errorf("failed get directory: %w", err)
 	}
 
 	filename := handler.Filename
@@ -55,15 +55,15 @@ func UploadFile(w http.ResponseWriter, r *http.Request, name string, logger *log
 	targetFile, err := os.OpenFile(fileLocation, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		logger.Printf("failed open file: %s, path: %s", err.Error(), fileLocation)
-		return "", fmt.Errorf("failed open file: %w, path: %s", err, fileLocation)
+		return "", "", fmt.Errorf("failed open file: %w, path: %s", err, fileLocation)
 	}
 	defer targetFile.Close()
 
 	if _, err := io.Copy(targetFile, uploadedFile); err != nil {
 		logger.Printf("failed system copy file: %s", err.Error())
-		return "", fmt.Errorf("failed system copy file: %w", err)
+		return "", "", fmt.Errorf("failed system copy file: %w", err)
 	}
-	return fileLocation, nil
+	return fileLocation, filename, nil
 }
 
 func getFileContentType(fname string, logger *log.Logger) (string, error) {
