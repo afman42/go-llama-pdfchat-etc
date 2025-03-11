@@ -15,6 +15,9 @@
 - File example,bentukan harus dokumen, disclaimer utk di testing
   - text.txt : `https://github.com/jonathanhecl/gollama/blob/main/examples/rag/text.txt`
   - Lorem_ipsum.pdf : searching google
+- put file `pdf2txt` into `/usr/local/bin` or `~/.local/bin` to run file globally
+- should upload file inside text, not image or anything, just pure file text
+ 
 
 ## Todo
 
@@ -32,4 +35,4 @@
 
 ## Kendala
 
-- di prod, saat mengirimkan text terjadi 504 Gateway Time out nginx, alternatif jalan local atau intranet
+- di prod, saat mengirimkan text terjadi 504 Gateway Time out nginx jadi naikan upstream nginx nya, alternatif jalan local atau intranet
