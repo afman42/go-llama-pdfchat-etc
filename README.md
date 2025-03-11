@@ -8,7 +8,7 @@
 - Install Cmake Terbaru
 - UPX (compress file)
 - Model Embedding
-  - How to chat pdf, use model `mistral` - `Not Work`
+  - How to chat pdf, use model `nomic-embed-text` - convert txt
   - How to chat txt, use model `nomic-embed-text`
 - Model Chat, use model `llama3`, `qwen`, `deepseek`
 - lama atau cepat pemrosesan tergantung spesifikasi sistem pc, laptop maupun server
@@ -29,3 +29,7 @@
 - di dev, `make run/api`, `make run/web` di beda terminal
 - di preview, `make run/preview_linux`
 - di prod, `make deploy/prod` mau masukin ke `caprover`
+
+## Kendala
+
+- di prod, saat mengirimkan text terjadi 504 Gateway Time out nginx, alternatif jalan local atau intranet
