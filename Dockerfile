@@ -1,4 +1,6 @@
-FROM gcr.io/distroless/base-debian12:latest
+FROM ubuntu:23.10
+
+COPY ./pdf2txt /usr/local/bin/
 
 WORKDIR /app
 
