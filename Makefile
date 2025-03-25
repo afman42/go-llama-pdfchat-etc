@@ -1,8 +1,13 @@
 .ONESHELL:
 
+CURRENT_DIR = $(CURDIR)
+
+print-dir:
+	@echo "Current directory is: $(CURRENT_DIR)"
+
 run/api:
 	@echo "Run API";
-	@go run main.go;
+	@go run *.go;
 	@echo "Stop Running API";
 
 run/web:
@@ -11,8 +16,8 @@ run/web:
 	@echo "Stop Running Web";
 
 run/preview_linux: 
-	# Prevent error compile linux: pattern dist embed is not found
 	@make build/web-staging; 
+	@make build/rmfldr;
 	@make build/linux;
 	@make preview/api_linux;
 
@@ -23,7 +28,7 @@ build/rmfldr:
 
 build/linux:
 	@echo "Build Binary linux";
-	GOOS=linux GOARCH=amd64 go build -ldflags="-s" -o=./bin/linux_amd64/tmp/app main.go;
+	GOOS=linux GOARCH=amd64 go build -ldflags="-s" -o=./bin/linux_amd64/tmp/app .;
 	@echo "Build Binary Done";
 
 build/web:
@@ -54,12 +59,12 @@ deploy/tar:
 
 deploy/prod: build deploy/tar deploy
 
-#npmi l="" || npmi l="lib lib"
+#npmi i="" || npmi i="lib lib"
 npmi:
 	@echo "Install lib";
 	@cd web; 
-	@npm install $$l;
-	@echo "Finish Install Lib: $l";
+	@npm install $$i;
+	@echo "Finish Install Lib: $i";
 
 #npmu u="" || npmu u="lib lib"
 npmu:
@@ -68,5 +73,5 @@ npmu:
 	@echo "Finish Uninstall Lib: $u";
 
 preview/api_linux:
-	@echo "Preview";
+	echo "Preview";
 	./bin/linux_amd64/tmp/app -mode preview;
