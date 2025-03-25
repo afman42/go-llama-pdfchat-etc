@@ -4,6 +4,7 @@ import "toastr/build/toastr.css";
 import "jquery/jquery";
 import "select2/select2";
 import toastr from "toastr/toastr";
+import DOMPurify from "dompurify";
 
 //Lib
 toastr.options.showEasing = "swing";
@@ -257,7 +258,7 @@ $("#formUpload").on("submit", function (e) {
 
   $("#txtContainer").append(
     '<h6 class="flex bg-gray-100 w-full px-2 py-1 rounded-lg break-all">' +
-      data.txt +
+      DOMPurify.sanitize(data.txt) +
       " - 👤" +
       "</h6>",
   );
@@ -271,7 +272,7 @@ $("#formUpload").on("submit", function (e) {
     data: JSON.stringify({
       txt: data.txt,
       fileLocation: data.fileLocation,
-      modelChat: data.modelChat
+      modelChat: data.modelChat,
     }),
     cache: false,
     processData: false,
