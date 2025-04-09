@@ -28,7 +28,11 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		SplitDomainEnv := strings.Split(os.Getenv("CORS_DOMAIN"), "://")
+		if os.Getenv("CORS_DOMAIN") == "http://localhost:5173" {
+			return true
+		}
+		return r.Host == SplitDomainEnv[1]
 	},
 }
 
